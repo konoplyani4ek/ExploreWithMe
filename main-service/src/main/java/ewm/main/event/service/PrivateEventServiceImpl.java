@@ -26,8 +26,8 @@ import ewm.main.category.repository.CategoryRepository;
 import ewm.main.dto.EventFullDto;
 import ewm.main.dto.NewEventDto;
 import ewm.main.exception.NotFoundException;
-import ewm.main.user.User;
-import ewm.main.user.UserRepository;
+import ewm.user.client.UserClient;
+import feign.FeignException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -42,7 +42,7 @@ import java.util.List;
 @Service
 @AllArgsConstructor
 public class PrivateEventServiceImpl implements PrivateEventService {
-    private final UserRepository userRepository;
+    private final UserClient userClient;
     private final EventRepository eventRepository;
     private final CategoryRepository categoryRepository;
     private final ParticipationRequestRepository participationRequestRepository;
@@ -66,7 +66,7 @@ public class PrivateEventServiceImpl implements PrivateEventService {
 
         Pageable pageable = PageRequest.of(pageParam.getFrom() / pageParam.getSize(), pageParam.getSize());
 
-        List<Event> events = eventRepository.findByInitiator_IdOrderByEventDateAsc(userId, pageable);
+        List<Event> events = eventRepository.findByInitiatorIdOrderByEventDateAsc(userId, pageable);
 
         log.info("Количество событий: {}", events.size());
 
@@ -79,11 +79,11 @@ public class PrivateEventServiceImpl implements PrivateEventService {
 
         validateEventDate(dto.getEventDate());
 
-        User user = findUserByIdOrThrow(userId);
+        checkUserExistsOrThrow(userId);
 
         Category category = findCategoryByIdOrThrow(dto.getCategory());
 
-        Event event = EventMapper.toEntity(dto, category, user);
+        Event event = EventMapper.toEntity(dto, category, userId);
         event.setCreatedOn(LocalDateTime.now());
         event.setState(EventState.PENDING);
         Event savedEvent = eventRepository.save(event);
@@ -124,7 +124,7 @@ public class PrivateEventServiceImpl implements PrivateEventService {
     public List<ParticipationRequestDto> getRequestsForEvent(long userId, long eventId) {
         log.info("Получение заявок на участие для userId: {} и eventId: {}", userId, eventId);
 
-        if (eventRepository.findOneByInitiator_IdAndId(userId, eventId).isEmpty()) {
+        if (eventRepository.findOneByInitiatorIdAndId(userId, eventId).isEmpty()) {
             return Collections.emptyList();
         }
 
@@ -268,9 +268,16 @@ public class PrivateEventServiceImpl implements PrivateEventService {
         return resultDto;
     }
 
-    private User findUserByIdOrThrow(long userId) {
-        return userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("Не найден пользователь с id: " + userId));
+    /**
+     * Пользователи больше не хранятся в этой БД — существование проверяем через
+     * Feign-вызов в user-service. 404 от user-service транслируем в свой NotFoundException.
+     */
+    private void checkUserExistsOrThrow(long userId) {
+        try {
+            userClient.getUser(userId);
+        } catch (FeignException.NotFound e) {
+            throw new NotFoundException("Не найден пользователь с id: " + userId);
+        }
     }
 
     private Category findCategoryByIdOrThrow(long categoryId) {
@@ -279,7 +286,7 @@ public class PrivateEventServiceImpl implements PrivateEventService {
     }
 
     private Event findEventByUserIdAndEventIdOrThrow(long userId, long eventId) {
-        return eventRepository.findOneByInitiator_IdAndId(userId, eventId)
+        return eventRepository.findOneByInitiatorIdAndId(userId, eventId)
                 .orElseThrow(() -> new NotFoundException(
                         String.format("У пользователя с id: %d нет события с id: %d", userId, eventId)));
     }

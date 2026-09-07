@@ -1,6 +1,7 @@
 package ewm.main.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import ewm.user.dto.UserShortDto;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

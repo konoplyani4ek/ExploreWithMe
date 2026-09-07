@@ -9,6 +9,9 @@ import ewm.main.request.repository.EventConfirmedRequestsCount;
 import ewm.main.request.repository.ParticipationRequestRepository;
 import ewm.main.stat.StatService;
 import ewm.stat.client.model.GetStatsParams;
+import ewm.user.client.UserClient;
+import ewm.user.dto.UserDto;
+import ewm.user.dto.UserShortDto;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -25,15 +28,20 @@ public class EventDtoAssembler {
 
     private final StatService statService;
     private final ParticipationRequestRepository participationRequestRepository;
+    private final UserClient userClient;
 
     public EventDtoAssembler(StatService statService,
-                             ParticipationRequestRepository participationRequestRepository) {
+                             ParticipationRequestRepository participationRequestRepository,
+                             UserClient userClient) {
         this.statService = statService;
         this.participationRequestRepository = participationRequestRepository;
+        this.userClient = userClient;
     }
 
     public EventShortDto toShortDto(Event event) {
-        EventShortDto dto = EventMapper.toShortDto(event);
+        UserShortDto initiator = getInitiator(event.getInitiatorId());
+
+        EventShortDto dto = EventMapper.toShortDto(event, initiator);
 
         dto.setViews(getViews(event));
         dto.setConfirmedRequests(getConfirmedRequests(event));
@@ -42,7 +50,9 @@ public class EventDtoAssembler {
     }
 
     public EventFullDto toFullDto(Event event) {
-        EventFullDto dto = EventMapper.toFullDto(event);
+        UserShortDto initiator = getInitiator(event.getInitiatorId());
+
+        EventFullDto dto = EventMapper.toFullDto(event, initiator);
 
         dto.setViews(getViews(event));
         dto.setConfirmedRequests(getConfirmedRequests(event));
@@ -53,11 +63,12 @@ public class EventDtoAssembler {
     public List<EventShortDto> toShortDtoList(List<Event> events) {
         Map<Long, Long> viewsByEventId = getViewsByEventId(events);
         Map<Long, Long> confirmedRequestsByEventId = getConfirmedRequestsByEventId(events);
+        Map<Long, UserShortDto> initiatorsByUserId = getInitiatorsByUserId(events);
 
         List<EventShortDto> result = new ArrayList<>();
 
         for (Event event : events) {
-            EventShortDto dto = EventMapper.toShortDto(event);
+            EventShortDto dto = EventMapper.toShortDto(event, initiatorsByUserId.get(event.getInitiatorId()));
             dto.setViews(getViewsForEvent(event, viewsByEventId));
             dto.setConfirmedRequests(getConfirmedRequestsForEvent(event, confirmedRequestsByEventId));
             result.add(dto);
@@ -69,14 +80,46 @@ public class EventDtoAssembler {
     public List<EventFullDto> toFullDtoList(List<Event> events) {
         Map<Long, Long> viewsByEventId = getViewsByEventId(events);
         Map<Long, Long> confirmedRequestsByEventId = getConfirmedRequestsByEventId(events);
+        Map<Long, UserShortDto> initiatorsByUserId = getInitiatorsByUserId(events);
 
         List<EventFullDto> result = new ArrayList<>();
 
         for (Event event : events) {
-            EventFullDto dto = EventMapper.toFullDto(event);
+            EventFullDto dto = EventMapper.toFullDto(event, initiatorsByUserId.get(event.getInitiatorId()));
             dto.setViews(getViewsForEvent(event, viewsByEventId));
             dto.setConfirmedRequests(getConfirmedRequestsForEvent(event, confirmedRequestsByEventId));
             result.add(dto);
+        }
+
+        return result;
+    }
+
+    private UserShortDto getInitiator(Long initiatorId) {
+        if (initiatorId == null) {
+            return null;
+        }
+        UserDto user = userClient.getUser(initiatorId);
+        return new UserShortDto(user.getId(), user.getName());
+    }
+
+    /**
+     * Один запрос к user-service на весь список событий вместо N запросов (проблема N+1).
+     */
+    private Map<Long, UserShortDto> getInitiatorsByUserId(List<Event> events) {
+        if (events.isEmpty()) {
+            return Map.of();
+        }
+
+        List<Long> initiatorIds = events.stream()
+                .map(Event::getInitiatorId)
+                .distinct()
+                .toList();
+
+        List<UserDto> users = userClient.getUsers(initiatorIds);
+
+        Map<Long, UserShortDto> result = new HashMap<>();
+        for (UserDto user : users) {
+            result.put(user.getId(), new UserShortDto(user.getId(), user.getName()));
         }
 
         return result;

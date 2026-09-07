@@ -2,7 +2,6 @@ package ewm.main.event.model;
 
 import ewm.main.category.Category;
 import ewm.main.place.Place;
-import ewm.main.user.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
@@ -74,9 +73,10 @@ public class Event {
     @Column(name = "published_on")
     private LocalDateTime publishedOn;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "initiator_id", nullable = false)
-    private User initiator;
+    // Пользователи вынесены в отдельный user-service здесь храним только id
+    // и получаем данные инициатора через UserClient (Feign) когда это нужно
+    @Column(name = "initiator_id", nullable = false)
+    private Long initiatorId;
 
     @Column(name = "created_on", nullable = false)
     private LocalDateTime createdOn;

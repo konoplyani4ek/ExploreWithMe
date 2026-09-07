@@ -42,7 +42,6 @@ create TABLE IF NOT EXISTS events (
     CONSTRAINT pk_events PRIMARY KEY (id),
     CONSTRAINT events_participant_limit_non_negative CHECK (participant_limit >= 0),
     CONSTRAINT fk_events_category FOREIGN KEY (category_id) REFERENCES categories(id) ON delete RESTRICT,
-    CONSTRAINT fk_events_initiator FOREIGN KEY (initiator_id) REFERENCES users(id) ON delete RESTRICT,
     CONSTRAINT fk_events_place FOREIGN KEY (place_id) REFERENCES places(id) ON DELETE SET NULL
 );
 
@@ -55,7 +54,6 @@ create TABLE IF NOT EXISTS participation_requests (
 
     CONSTRAINT pk_participation_requests PRIMARY KEY (id),
     CONSTRAINT fk_requests_event     FOREIGN KEY (event_id)     REFERENCES events(id) ON delete CASCADE,
-    CONSTRAINT fk_requests_requester FOREIGN KEY (requester_id) REFERENCES users(id)  ON delete CASCADE,
     CONSTRAINT uq_request_per_event  UNIQUE (event_id, requester_id)
 );
 

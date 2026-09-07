@@ -9,15 +9,14 @@ import ewm.main.dto.UpdateEventAdminRequestDto;
 import ewm.main.dto.UpdateEventUserRequestDto;
 import ewm.main.event.model.Event;
 import ewm.main.place.mapper.PlaceMapper;
-import ewm.main.user.User;
-import ewm.main.user.UserMapper;
+import ewm.user.dto.UserShortDto;
 
 public class EventMapper {
 
     private EventMapper() {
     }
 
-    public static Event toEntity(NewEventDto dto, Category category, User initiator) {
+    public static Event toEntity(NewEventDto dto, Category category, long initiatorId) {
         Event event = new Event();
         event.setTitle(dto.getTitle());
         event.setAnnotation(dto.getAnnotation());
@@ -28,12 +27,16 @@ public class EventMapper {
         event.setPaid(dto.getPaid());
         event.setParticipantLimit(dto.getParticipantLimit());
         event.setRequestModeration(dto.getRequestModeration());
-        event.setInitiator(initiator);
+        event.setInitiatorId(initiatorId);
 
         return event;
     }
 
-    public static EventFullDto toFullDto(Event event) {
+    /**
+     * initiator теперь приходит снаружи (из user-service через Feign), а не читается
+     * из JPA-связи, т.к. пользователи вынесены в отдельный сервис.
+     */
+    public static EventFullDto toFullDto(Event event, UserShortDto initiator) {
         EventFullDto dto = new EventFullDto();
         dto.setAnnotation(event.getAnnotation());
         dto.setCategory(CategoryMapper.toDto(event.getCategory()));
@@ -41,7 +44,7 @@ public class EventMapper {
         dto.setDescription(event.getDescription());
         dto.setEventDate(event.getEventDate());
         dto.setId(event.getId());
-        dto.setInitiator(UserMapper.toUserShortDto(event.getInitiator())); // обязательное поле
+        dto.setInitiator(initiator); // обязательное поле
         dto.setLocation(LocationMapper.toLocationDto(event.getLocation()));
         dto.setPaid(event.isPaid());
         dto.setParticipantLimit(event.getParticipantLimit());
@@ -54,14 +57,14 @@ public class EventMapper {
         return dto;
     }
 
-    public static EventShortDto toShortDto(Event event) {
+    public static EventShortDto toShortDto(Event event, UserShortDto initiator) {
         EventShortDto dto = new EventShortDto();
         dto.setId(event.getId());
         dto.setTitle(event.getTitle());
         dto.setAnnotation(event.getAnnotation());
         dto.setCategory(CategoryMapper.toDto(event.getCategory()));
         dto.setEventDate(event.getEventDate());
-        dto.setInitiator(UserMapper.toUserShortDto(event.getInitiator())); // обязательное поле
+        dto.setInitiator(initiator); // обязательное поле
         dto.setPaid(event.isPaid());
 
         return dto;

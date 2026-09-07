@@ -28,6 +28,8 @@ services:
         condition: service_started
       ewm-service:
         condition: service_healthy
+      user-service:
+        condition: service_healthy
     environment:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
       - SPRING_CLOUD_CONFIG_DISCOVERY_ENABLED=true
@@ -105,3 +107,41 @@ services:
       interval: 5s
       retries: 10
 
+  user-service:
+    build: core/user/user-server
+    image: user-service
+    healthcheck:
+      test: [ "CMD-SHELL", "bash -c '</dev/tcp/127.0.0.1/8081' || exit 1" ]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+      start_period: 10s
+    depends_on:
+      user-db:
+        condition: service_healthy
+      discovery-server:
+        condition: service_started
+      config-server:
+        condition: service_started
+    environment:
+      - SERVER_PORT=8081
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://user-db:5432/ewm-users
+      - SPRING_DATASOURCE_USERNAME=user
+      - SPRING_DATASOURCE_PASSWORD=user
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+      - SPRING_CLOUD_CONFIG_DISCOVERY_ENABLED=true
+      - SPRING_CLOUD_CONFIG_DISCOVERY_SERVICE_ID=config-server
+
+  user-db:
+    image: postgres:16.1
+    ports:
+      - "6543:5432"
+    environment:
+      - POSTGRES_PASSWORD=user
+      - POSTGRES_USER=user
+      - POSTGRES_DB=ewm-users
+    healthcheck:
+      test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
+      timeout: 5s
+      interval: 5s
+      retries: 10
