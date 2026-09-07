@@ -1,14 +1,14 @@
 package ewm.main.event.controller;
 
 import ewm.main.dto.EventFullDto;
-import ewm.main.dto.EventRequestStatusUpdateRequestDto;
-import ewm.main.dto.EventRequestStatusUpdateResultDto;
 import ewm.main.dto.EventShortDto;
 import ewm.main.dto.NewEventDto;
-import ewm.main.dto.ParticipationRequestDto;
 import ewm.main.dto.UpdateEventUserRequestDto;
 import ewm.main.dto.search.PageParam;
 import ewm.main.event.service.PrivateEventService;
+import ewm.request.dto.EventRequestStatusUpdateRequestDto;
+import ewm.request.dto.EventRequestStatusUpdateResultDto;
+import ewm.request.dto.ParticipationRequestDto;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
