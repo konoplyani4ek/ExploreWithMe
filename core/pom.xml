@@ -16,7 +16,6 @@
          request, event, additional -->
     <modules>
         <module>user</module>
-        <module>user</module>
     </modules>
 
 </project>

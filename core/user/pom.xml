@@ -15,9 +15,6 @@
         <module>user-dto</module>
         <module>user-client</module>
         <module>user-server</module>
-        <module>user-dto</module>
-        <module>user-client</module>
-        <module>user-server</module>
     </modules>
 
     <dependencyManagement>
