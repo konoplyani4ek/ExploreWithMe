@@ -33,6 +33,8 @@ services:
   stats-server:
     build: stat/stat-server
     image: stat-server
+    ports:
+      - "9090:9090"
     depends_on:
       stats-db:
         condition: service_healthy
