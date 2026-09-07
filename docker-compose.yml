@@ -18,15 +18,13 @@ services:
   gateway-server:
     build: infra/gateway-server
     image: gateway-server
+    restart: on-failure
     ports:
       - "8080:8080"
     depends_on:
-      discovery-server:
-        condition: service_started
-      config-server:
-        condition: service_started
-      ewm-service:
-        condition: service_started
+      - discovery-server
+      - config-server
+      - ewm-service
     environment:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
       - SPRING_CLOUD_CONFIG_DISCOVERY_ENABLED=true
