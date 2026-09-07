@@ -15,8 +15,6 @@
         <module>request-dto</module>
         <module>request-client</module>
         <module>request-server</module>
-        <module>request-client</module>
-        <module>request-server</module>
     </modules>
 
     <dependencyManagement>

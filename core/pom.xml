@@ -16,7 +16,6 @@
         <module>user</module>
         <module>event</module>
         <module>request</module>
-        <module>request</module>
     </modules>
 
 </project>

@@ -16,7 +16,6 @@
         <module>event-dto</module>
         <module>event-client</module>
         <module>event-dto</module>
-        <module>event-client</module>
     </modules>
 
     <dependencyManagement>
