@@ -1,10 +1,14 @@
-package ewm.main.event.service;
+package ewm.event.server.service;
 
-import ewm.main.dto.EventFullDto;
-import ewm.main.dto.EventShortDto;
-import ewm.main.event.mapper.EventMapper;
-import ewm.main.event.model.Event;
-import ewm.main.stat.StatService;
+import ewm.category.client.CategoryClient;
+import ewm.category.dto.CategoryDto;
+import ewm.event.server.dto.EventFullDto;
+import ewm.event.server.dto.EventShortDto;
+import ewm.event.server.mapper.EventMapper;
+import ewm.event.server.model.Event;
+import ewm.event.server.stat.StatService;
+import ewm.place.client.PlaceClient;
+import ewm.place.dto.PlaceDto;
 import ewm.request.client.RequestClient;
 import ewm.request.dto.EventConfirmedRequestsCountDto;
 import ewm.stat.client.model.GetStatsParams;
@@ -28,19 +32,26 @@ public class EventDtoAssembler {
     private final StatService statService;
     private final RequestClient requestClient;
     private final UserClient userClient;
+    private final CategoryClient categoryClient;
+    private final PlaceClient placeClient;
 
     public EventDtoAssembler(StatService statService,
                              RequestClient requestClient,
-                             UserClient userClient) {
+                             UserClient userClient,
+                             CategoryClient categoryClient,
+                             PlaceClient placeClient) {
         this.statService = statService;
         this.requestClient = requestClient;
         this.userClient = userClient;
+        this.categoryClient = categoryClient;
+        this.placeClient = placeClient;
     }
 
     public EventShortDto toShortDto(Event event) {
         UserShortDto initiator = getInitiator(event.getInitiatorId());
+        CategoryDto category = categoryClient.getCategory(event.getCategoryId());
 
-        EventShortDto dto = EventMapper.toShortDto(event, initiator);
+        EventShortDto dto = EventMapper.toShortDto(event, category, initiator);
 
         dto.setViews(getViews(event));
         dto.setConfirmedRequests(requestClient.getConfirmedCount(event.getId()));
@@ -50,8 +61,10 @@ public class EventDtoAssembler {
 
     public EventFullDto toFullDto(Event event) {
         UserShortDto initiator = getInitiator(event.getInitiatorId());
+        CategoryDto category = categoryClient.getCategory(event.getCategoryId());
+        PlaceDto place = event.getPlaceId() != null ? placeClient.getPlace(event.getPlaceId()) : null;
 
-        EventFullDto dto = EventMapper.toFullDto(event, initiator);
+        EventFullDto dto = EventMapper.toFullDto(event, category, initiator, place);
 
         dto.setViews(getViews(event));
         dto.setConfirmedRequests(requestClient.getConfirmedCount(event.getId()));
@@ -63,11 +76,16 @@ public class EventDtoAssembler {
         Map<Long, Long> viewsByEventId = getViewsByEventId(events);
         Map<Long, Long> confirmedRequestsByEventId = getConfirmedRequestsByEventId(events);
         Map<Long, UserShortDto> initiatorsByUserId = getInitiatorsByUserId(events);
+        Map<Long, CategoryDto> categoriesByCategoryId = getCategoriesByCategoryId(events);
 
         List<EventShortDto> result = new ArrayList<>();
 
         for (Event event : events) {
-            EventShortDto dto = EventMapper.toShortDto(event, initiatorsByUserId.get(event.getInitiatorId()));
+            EventShortDto dto = EventMapper.toShortDto(
+                    event,
+                    categoriesByCategoryId.get(event.getCategoryId()),
+                    initiatorsByUserId.get(event.getInitiatorId())
+            );
             dto.setViews(getViewsForEvent(event, viewsByEventId));
             dto.setConfirmedRequests(confirmedRequestsByEventId.getOrDefault(event.getId(), 0L));
             result.add(dto);
@@ -80,11 +98,19 @@ public class EventDtoAssembler {
         Map<Long, Long> viewsByEventId = getViewsByEventId(events);
         Map<Long, Long> confirmedRequestsByEventId = getConfirmedRequestsByEventId(events);
         Map<Long, UserShortDto> initiatorsByUserId = getInitiatorsByUserId(events);
+        Map<Long, CategoryDto> categoriesByCategoryId = getCategoriesByCategoryId(events);
 
         List<EventFullDto> result = new ArrayList<>();
 
         for (Event event : events) {
-            EventFullDto dto = EventMapper.toFullDto(event, initiatorsByUserId.get(event.getInitiatorId()));
+            PlaceDto place = event.getPlaceId() != null ? placeClient.getPlace(event.getPlaceId()) : null;
+
+            EventFullDto dto = EventMapper.toFullDto(
+                    event,
+                    categoriesByCategoryId.get(event.getCategoryId()),
+                    initiatorsByUserId.get(event.getInitiatorId()),
+                    place
+            );
             dto.setViews(getViewsForEvent(event, viewsByEventId));
             dto.setConfirmedRequests(confirmedRequestsByEventId.getOrDefault(event.getId(), 0L));
             result.add(dto);
@@ -125,8 +151,28 @@ public class EventDtoAssembler {
     }
 
     /**
-     * Один запрос к request-service на весь список событий вместо N запросов (проблема N+1).
+     * Аналогично — один батч-запрос к main-service (категории) на весь список событий.
      */
+    private Map<Long, CategoryDto> getCategoriesByCategoryId(List<Event> events) {
+        if (events.isEmpty()) {
+            return Map.of();
+        }
+
+        List<Long> categoryIds = events.stream()
+                .map(Event::getCategoryId)
+                .distinct()
+                .toList();
+
+        List<CategoryDto> categories = categoryClient.getCategories(categoryIds);
+
+        Map<Long, CategoryDto> result = new HashMap<>();
+        for (CategoryDto category : categories) {
+            result.put(category.getId(), category);
+        }
+
+        return result;
+    }
+
     private Map<Long, Long> getConfirmedRequestsByEventId(List<Event> events) {
         if (events.isEmpty()) {
             return Map.of();

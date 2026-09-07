@@ -1,14 +1,13 @@
-package ewm.main.event.mapper;
+package ewm.event.server.mapper;
 
-import ewm.main.category.Category;
-import ewm.main.category.mapper.CategoryMapper;
-import ewm.main.dto.EventFullDto;
-import ewm.main.dto.EventShortDto;
-import ewm.main.dto.NewEventDto;
-import ewm.main.dto.UpdateEventAdminRequestDto;
-import ewm.main.dto.UpdateEventUserRequestDto;
-import ewm.main.event.model.Event;
-import ewm.main.place.mapper.PlaceMapper;
+import ewm.category.dto.CategoryDto;
+import ewm.event.server.dto.EventFullDto;
+import ewm.event.server.dto.EventShortDto;
+import ewm.event.server.dto.NewEventDto;
+import ewm.event.server.dto.UpdateEventAdminRequestDto;
+import ewm.event.server.dto.UpdateEventUserRequestDto;
+import ewm.event.server.model.Event;
+import ewm.place.dto.PlaceDto;
 import ewm.user.dto.UserShortDto;
 
 public class EventMapper {
@@ -16,12 +15,12 @@ public class EventMapper {
     private EventMapper() {
     }
 
-    public static Event toEntity(NewEventDto dto, Category category, long initiatorId) {
+    public static Event toEntity(NewEventDto dto, long initiatorId) {
         Event event = new Event();
         event.setTitle(dto.getTitle());
         event.setAnnotation(dto.getAnnotation());
         event.setDescription(dto.getDescription());
-        event.setCategory(category);
+        event.setCategoryId(dto.getCategory());
         event.setEventDate(dto.getEventDate());
         event.setLocation(LocationMapper.toLocation(dto.getLocation()));
         event.setPaid(dto.getPaid());
@@ -33,49 +32,49 @@ public class EventMapper {
     }
 
     /**
-     * initiator теперь приходит снаружи (из user-service через Feign), а не читается
-     * из JPA-связи, т.к. пользователи вынесены в отдельный сервис.
+     * category/initiator/place приходят снаружи (из чужих сервисов через Feign),
+     * а не читаются из JPA-связей — их здесь больше нет.
      */
-    public static EventFullDto toFullDto(Event event, UserShortDto initiator) {
+    public static EventFullDto toFullDto(Event event, CategoryDto category, UserShortDto initiator, PlaceDto place) {
         EventFullDto dto = new EventFullDto();
         dto.setAnnotation(event.getAnnotation());
-        dto.setCategory(CategoryMapper.toDto(event.getCategory()));
+        dto.setCategory(category);
         dto.setCreatedOn(event.getCreatedOn());
         dto.setDescription(event.getDescription());
         dto.setEventDate(event.getEventDate());
         dto.setId(event.getId());
-        dto.setInitiator(initiator); // обязательное поле
+        dto.setInitiator(initiator);
         dto.setLocation(LocationMapper.toLocationDto(event.getLocation()));
         dto.setPaid(event.isPaid());
         dto.setParticipantLimit(event.getParticipantLimit());
         dto.setPublishedOn(event.getPublishedOn());
         dto.setRequestModeration(event.isRequestModeration());
-        dto.setState(event.getState().name()); // обязательное поле
+        dto.setState(event.getState().name());
         dto.setTitle(event.getTitle());
-        dto.setPlace(PlaceMapper.toShortDto(event.getPlace()));
+        dto.setPlace(place);
 
         return dto;
     }
 
-    public static EventShortDto toShortDto(Event event, UserShortDto initiator) {
+    public static EventShortDto toShortDto(Event event, CategoryDto category, UserShortDto initiator) {
         EventShortDto dto = new EventShortDto();
         dto.setId(event.getId());
         dto.setTitle(event.getTitle());
         dto.setAnnotation(event.getAnnotation());
-        dto.setCategory(CategoryMapper.toDto(event.getCategory()));
+        dto.setCategory(category);
         dto.setEventDate(event.getEventDate());
-        dto.setInitiator(initiator); // обязательное поле
+        dto.setInitiator(initiator);
         dto.setPaid(event.isPaid());
 
         return dto;
     }
 
-    public static void updateEntity(Event event, UpdateEventUserRequestDto dto, Category category) {
+    public static void updateEntity(Event event, UpdateEventUserRequestDto dto, Long newCategoryId) {
         if (dto.getTitle() != null) event.setTitle(dto.getTitle());
         if (dto.getAnnotation() != null) event.setAnnotation(dto.getAnnotation());
         if (dto.getDescription() != null) event.setDescription(dto.getDescription());
-        if (category != null) {
-            event.setCategory(category);
+        if (newCategoryId != null) {
+            event.setCategoryId(newCategoryId);
         }
         if (dto.getPaid() != null) event.setPaid(dto.getPaid());
         if (dto.getParticipantLimit() != null) event.setParticipantLimit(dto.getParticipantLimit());
@@ -85,12 +84,12 @@ public class EventMapper {
         if (dto.getRequestModeration() != null) event.setRequestModeration(dto.getRequestModeration());
     }
 
-    public static void updateEntity(Event event, UpdateEventAdminRequestDto dto, Category category) {
+    public static void updateEntity(Event event, UpdateEventAdminRequestDto dto, Long newCategoryId) {
         if (dto.getTitle() != null) event.setTitle(dto.getTitle());
         if (dto.getAnnotation() != null) event.setAnnotation(dto.getAnnotation());
         if (dto.getDescription() != null) event.setDescription(dto.getDescription());
-        if (category != null) {
-            event.setCategory(category);
+        if (newCategoryId != null) {
+            event.setCategoryId(newCategoryId);
         }
         if (dto.getPaid() != null) event.setPaid(dto.getPaid());
         if (dto.getParticipantLimit() != null) event.setParticipantLimit(dto.getParticipantLimit());

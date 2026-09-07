@@ -16,6 +16,7 @@
         <module>user</module>
         <module>event</module>
         <module>request</module>
+        <module>event/event-server</module>
     </modules>
 
 </project>

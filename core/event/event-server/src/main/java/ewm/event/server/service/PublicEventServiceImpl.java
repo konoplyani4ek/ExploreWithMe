@@ -1,18 +1,19 @@
-package ewm.main.event.service;
+package ewm.event.server.service;
 
-import ewm.main.dto.EventFullDto;
-import ewm.main.dto.EventShortDto;
-import ewm.main.event.model.Event;
-import ewm.main.event.model.EventSort;
-import ewm.main.event.model.EventState;
-import ewm.main.dto.search.PageParam;
-import ewm.main.dto.search.PublicEventSearchParam;
-import ewm.main.event.repository.EventRepository;
-import ewm.main.event.repository.EventSpecifications;
-import ewm.main.exception.NotFoundException;
-import ewm.main.exception.ValidationException;
-import ewm.main.place.Place;
-import ewm.main.place.repository.PlaceRepository;
+import ewm.event.server.dto.EventFullDto;
+import ewm.event.server.dto.EventShortDto;
+import ewm.event.server.dto.search.PageParam;
+import ewm.event.server.dto.search.PublicEventSearchParam;
+import ewm.event.server.exception.NotFoundException;
+import ewm.event.server.exception.ValidationException;
+import ewm.event.server.model.Event;
+import ewm.event.server.model.EventSort;
+import ewm.event.server.model.EventState;
+import ewm.event.server.repository.EventRepository;
+import ewm.event.server.repository.EventSpecifications;
+import ewm.place.client.PlaceClient;
+import ewm.place.dto.PlaceDto;
+import feign.FeignException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -31,7 +32,7 @@ import java.util.List;
 public class PublicEventServiceImpl implements PublicEventService {
     private final EventRepository eventRepository;
     private final EventDtoAssembler eventDtoAssembler;
-    private final PlaceRepository placeRepository;
+    private final PlaceClient placeClient;
 
     @Override
     public List<EventShortDto> getEvents(PublicEventSearchParam searchParam, PageParam pageParam) {
@@ -61,11 +62,14 @@ public class PublicEventServiceImpl implements PublicEventService {
                 .and(EventSpecifications.categoryIdIn(searchParam.getCategories()));
 
         Long placeId = searchParam.getPlaceId();
-        Place place = null;
+        PlaceDto place = null;
 
         if (placeId != null) {
-            place = placeRepository.findById(placeId)
-                    .orElseThrow(() -> new NotFoundException("Не найдено место с id: " + placeId));
+            try {
+                place = placeClient.getPlace(placeId);
+            } catch (FeignException.NotFound e) {
+                throw new NotFoundException("Не найдено место с id: " + placeId);
+            }
         }
 
         specification = specification.and(EventSpecifications.placeSearch(place, searchParam.getRadius()));

@@ -1,21 +1,21 @@
-package ewm.main.event.service;
+package ewm.event.server.service;
 
-import ewm.main.category.Category;
-import ewm.main.category.repository.CategoryRepository;
-import ewm.main.dto.EventFullDto;
-import ewm.main.dto.UpdateEventAdminRequestDto;
-import ewm.main.event.mapper.EventMapper;
-import ewm.main.dto.search.AdminEventSearchParam;
-import ewm.main.event.model.Event;
-import ewm.main.event.model.EventStateAction;
-import ewm.main.event.model.EventState;
-import ewm.main.dto.search.PageParam;
-import ewm.main.event.repository.EventRepository;
-import ewm.main.event.repository.EventSpecifications;
-import ewm.main.exception.ConflictException;
-import ewm.main.exception.NotFoundException;
-import ewm.main.place.Place;
-import ewm.main.place.repository.PlaceRepository;
+import ewm.category.client.CategoryClient;
+import ewm.event.server.dto.EventFullDto;
+import ewm.event.server.dto.UpdateEventAdminRequestDto;
+import ewm.event.server.dto.search.AdminEventSearchParam;
+import ewm.event.server.dto.search.PageParam;
+import ewm.event.server.exception.ConflictException;
+import ewm.event.server.exception.NotFoundException;
+import ewm.event.server.mapper.EventMapper;
+import ewm.event.server.model.Event;
+import ewm.event.server.model.EventState;
+import ewm.event.server.model.EventStateAction;
+import ewm.event.server.repository.EventRepository;
+import ewm.event.server.repository.EventSpecifications;
+import ewm.place.client.PlaceClient;
+import ewm.place.dto.PlaceDto;
+import feign.FeignException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -32,9 +32,9 @@ import java.util.List;
 @AllArgsConstructor
 public class AdminEventServiceImpl implements AdminEventService {
     private final EventRepository eventRepository;
-    private final CategoryRepository categoryRepository;
+    private final CategoryClient categoryClient;
     private final EventDtoAssembler eventDtoAssembler;
-    private final PlaceRepository placeRepository;
+    private final PlaceClient placeClient;
 
     @Override
     public List<EventFullDto> searchEvents(AdminEventSearchParam searchParam, PageParam pageParam) {
@@ -52,12 +52,7 @@ public class AdminEventServiceImpl implements AdminEventService {
                     .and(EventSpecifications.stateIn(searchParam.getStates()));
 
             Long placeId = searchParam.getPlaceId();
-            Place place = null;
-
-            if (placeId != null) {
-                place = placeRepository.findById(placeId)
-                        .orElseThrow(() -> new NotFoundException("Не найдено место с id: " + placeId));
-            }
+            PlaceDto place = placeId != null ? findPlaceOrThrow(placeId) : null;
 
             spec = spec.and(EventSpecifications.placeSearch(place, searchParam.getRadius()));
         }
@@ -76,13 +71,11 @@ public class AdminEventServiceImpl implements AdminEventService {
         Event event = findEventByOrThrow(eventId);
 
         Long newCategoryId = request.getCategory();
-        Category newCategory = null;
         if (newCategoryId != null) {
-            newCategory = categoryRepository.findById(newCategoryId)
-                    .orElseThrow(() -> new NotFoundException("Не найдена категория с id: " + newCategoryId));
+            checkCategoryExistsOrThrow(newCategoryId);
         }
 
-        EventMapper.updateEntity(event, request, newCategory);
+        EventMapper.updateEntity(event, request, newCategoryId);
 
         LocalDateTime now = LocalDateTime.now();
 
@@ -127,10 +120,9 @@ public class AdminEventServiceImpl implements AdminEventService {
 
         Event event = findEventByOrThrow(eventId);
 
-        Place place = placeRepository.findById(placeId)
-                .orElseThrow(() -> new NotFoundException("Не найдено место: " + placeId));
+        findPlaceOrThrow(placeId); // просто проверяем существование
 
-        event.setPlace(place);
+        event.setPlaceId(placeId);
 
         return eventDtoAssembler.toFullDto(eventRepository.save(event));
     }
@@ -140,7 +132,7 @@ public class AdminEventServiceImpl implements AdminEventService {
         log.info("Отвязка места от события с id: {}", eventId);
         Event event = findEventByOrThrow(eventId);
 
-        event.setPlace(null);
+        event.setPlaceId(null);
 
         eventRepository.save(event);
     }
@@ -150,4 +142,19 @@ public class AdminEventServiceImpl implements AdminEventService {
                 () -> new NotFoundException("Событие с id " + eventId + " не найдено."));
     }
 
+    private void checkCategoryExistsOrThrow(long categoryId) {
+        try {
+            categoryClient.getCategory(categoryId);
+        } catch (FeignException.NotFound e) {
+            throw new NotFoundException("Не найдена категория с id: " + categoryId);
+        }
+    }
+
+    private PlaceDto findPlaceOrThrow(long placeId) {
+        try {
+            return placeClient.getPlace(placeId);
+        } catch (FeignException.NotFound e) {
+            throw new NotFoundException("Не найдено место с id: " + placeId);
+        }
+    }
 }

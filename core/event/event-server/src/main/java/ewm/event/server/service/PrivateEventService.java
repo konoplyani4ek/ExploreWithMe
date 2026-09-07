@@ -1,10 +1,10 @@
-package ewm.main.event.service;
+package ewm.event.server.service;
 
-import ewm.main.dto.EventFullDto;
-import ewm.main.dto.EventShortDto;
-import ewm.main.dto.NewEventDto;
-import ewm.main.dto.UpdateEventUserRequestDto;
-import ewm.main.dto.search.PageParam;
+import ewm.event.server.dto.EventFullDto;
+import ewm.event.server.dto.EventShortDto;
+import ewm.event.server.dto.NewEventDto;
+import ewm.event.server.dto.UpdateEventUserRequestDto;
+import ewm.event.server.dto.search.PageParam;
 import ewm.request.dto.EventRequestStatusUpdateRequestDto;
 import ewm.request.dto.EventRequestStatusUpdateResultDto;
 import ewm.request.dto.ParticipationRequestDto;

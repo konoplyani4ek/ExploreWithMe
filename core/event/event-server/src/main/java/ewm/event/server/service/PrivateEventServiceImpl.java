@@ -1,20 +1,18 @@
-package ewm.main.event.service;
+package ewm.event.server.service;
 
-import ewm.main.category.Category;
-import ewm.main.category.repository.CategoryRepository;
-import ewm.main.dto.EventFullDto;
-import ewm.main.dto.EventShortDto;
-import ewm.main.dto.NewEventDto;
-import ewm.main.dto.UpdateEventUserRequestDto;
-import ewm.main.dto.search.PageParam;
-import ewm.main.event.mapper.EventMapper;
-import ewm.main.event.model.Event;
-import ewm.main.event.model.EventState;
-import ewm.main.event.repository.EventRepository;
-import ewm.main.exception.ConflictException;
-import ewm.main.exception.NotFoundException;
-import ewm.main.place.Place;
-import ewm.main.place.repository.PlaceRepository;
+import ewm.category.client.CategoryClient;
+import ewm.event.server.dto.EventFullDto;
+import ewm.event.server.dto.EventShortDto;
+import ewm.event.server.dto.NewEventDto;
+import ewm.event.server.dto.UpdateEventUserRequestDto;
+import ewm.event.server.dto.search.PageParam;
+import ewm.event.server.exception.ConflictException;
+import ewm.event.server.exception.NotFoundException;
+import ewm.event.server.mapper.EventMapper;
+import ewm.event.server.model.Event;
+import ewm.event.server.model.EventState;
+import ewm.event.server.repository.EventRepository;
+import ewm.place.client.PlaceClient;
 import ewm.request.client.RequestClient;
 import ewm.request.dto.EventRequestStatusUpdateRequestDto;
 import ewm.request.dto.EventRequestStatusUpdateResultDto;
@@ -38,10 +36,10 @@ import java.util.List;
 public class PrivateEventServiceImpl implements PrivateEventService {
     private final UserClient userClient;
     private final EventRepository eventRepository;
-    private final CategoryRepository categoryRepository;
+    private final CategoryClient categoryClient;
     private final RequestClient requestClient;
     private final EventDtoAssembler eventDtoAssembler;
-    private final PlaceRepository placeRepository;
+    private final PlaceClient placeClient;
 
     @Override
     public EventFullDto getEventOfUserById(long userId, long eventId) {
@@ -49,20 +47,16 @@ public class PrivateEventServiceImpl implements PrivateEventService {
 
         Event event = findEventByUserIdAndEventIdOrThrow(userId, eventId);
 
-        log.info("Событие успешно получено, eventId: {}", eventId);
-
         return eventDtoAssembler.toFullDto(event);
     }
 
     @Override
     public List<EventShortDto> getAllByUserId(long userId, PageParam pageParam) {
-        log.info("Получение событий для userId: {}, с: {}, размер: {}", userId, pageParam);
+        log.info("Получение событий для userId: {}, {}", userId, pageParam);
 
         Pageable pageable = PageRequest.of(pageParam.getFrom() / pageParam.getSize(), pageParam.getSize());
 
         List<Event> events = eventRepository.findByInitiatorIdOrderByEventDateAsc(userId, pageable);
-
-        log.info("Количество событий: {}", events.size());
 
         return eventDtoAssembler.toShortDtoList(events);
     }
@@ -74,10 +68,9 @@ public class PrivateEventServiceImpl implements PrivateEventService {
         validateEventDate(dto.getEventDate());
 
         checkUserExistsOrThrow(userId);
+        checkCategoryExistsOrThrow(dto.getCategory());
 
-        Category category = findCategoryByIdOrThrow(dto.getCategory());
-
-        Event event = EventMapper.toEntity(dto, category, userId);
+        Event event = EventMapper.toEntity(dto, userId);
         event.setCreatedOn(LocalDateTime.now());
         event.setState(EventState.PENDING);
         Event savedEvent = eventRepository.save(event);
@@ -96,9 +89,12 @@ public class PrivateEventServiceImpl implements PrivateEventService {
 
         validateEventDate(event.getEventDate());
 
-        Category category = dto.getCategory() != null ? findCategoryByIdOrThrow(dto.getCategory()) : null;
+        Long newCategoryId = dto.getCategory();
+        if (newCategoryId != null) {
+            checkCategoryExistsOrThrow(newCategoryId);
+        }
 
-        EventMapper.updateEntity(event, dto, category);
+        EventMapper.updateEntity(event, dto, newCategoryId);
 
         if (dto.getStateAction() != null) {
             switch (dto.getStateAction()) {
@@ -109,7 +105,6 @@ public class PrivateEventServiceImpl implements PrivateEventService {
         }
 
         Event updatedEvent = eventRepository.save(event);
-        log.info("Событие успешно обновлено с id: {}", updatedEvent.getId());
 
         return eventDtoAssembler.toFullDto(updatedEvent);
     }
@@ -127,12 +122,10 @@ public class PrivateEventServiceImpl implements PrivateEventService {
 
     @Override
     public EventRequestStatusUpdateResultDto setRequestsStatus(long userId, long eventId, EventRequestStatusUpdateRequestDto dto) {
-        log.info("Установка статуса заявок на участие для userId: {}, eventId: {}, dto: {}", userId, eventId, dto);
+        log.info("Установка статуса заявок для userId: {}, eventId: {}, dto: {}", userId, eventId, dto);
 
         Event event = findEventByUserIdAndEventIdOrThrow(userId, eventId);
 
-        // participantLimit/requestModeration принадлежат событию — у request-service
-        // нет доступа к таблице events, поэтому передаём их явно вместе с запросом.
         InternalUpdateRequestStatusDto internalDto = InternalUpdateRequestStatusDto.builder()
                 .requestIds(dto.getRequestIds())
                 .status(dto.getStatus())
@@ -151,10 +144,9 @@ public class PrivateEventServiceImpl implements PrivateEventService {
 
         checkEventIsEditable(event);
 
-        Place place = placeRepository.findById(placeId)
-                .orElseThrow(() -> new NotFoundException("Не найдено место: " + placeId));
+        findPlaceOrThrow(placeId);
 
-        event.setPlace(place);
+        event.setPlaceId(placeId);
 
         return eventDtoAssembler.toFullDto(eventRepository.save(event));
     }
@@ -167,15 +159,11 @@ public class PrivateEventServiceImpl implements PrivateEventService {
 
         checkEventIsEditable(event);
 
-        event.setPlace(null);
+        event.setPlaceId(null);
 
         eventRepository.save(event);
     }
 
-    /**
-     * Пользователи хранятся в user-service — проверяем существование через Feign
-     * и транслируем 404 оттуда в свой NotFoundException.
-     */
     private void checkUserExistsOrThrow(long userId) {
         try {
             userClient.getUser(userId);
@@ -184,9 +172,20 @@ public class PrivateEventServiceImpl implements PrivateEventService {
         }
     }
 
-    private Category findCategoryByIdOrThrow(long categoryId) {
-        return categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new NotFoundException("Не найдена категория с id: " + categoryId));
+    private void checkCategoryExistsOrThrow(long categoryId) {
+        try {
+            categoryClient.getCategory(categoryId);
+        } catch (FeignException.NotFound e) {
+            throw new NotFoundException("Не найдена категория с id: " + categoryId);
+        }
+    }
+
+    private void findPlaceOrThrow(long placeId) {
+        try {
+            placeClient.getPlace(placeId);
+        } catch (FeignException.NotFound e) {
+            throw new NotFoundException("Не найдено место: " + placeId);
+        }
     }
 
     private Event findEventByUserIdAndEventIdOrThrow(long userId, long eventId) {

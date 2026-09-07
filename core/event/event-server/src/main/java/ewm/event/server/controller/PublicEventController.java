@@ -1,16 +1,20 @@
-package ewm.main.event.controller;
+package ewm.event.server.controller;
 
-import ewm.main.dto.EventFullDto;
-import ewm.main.dto.EventShortDto;
-import ewm.main.dto.search.PageParam;
-import ewm.main.dto.search.PublicEventSearchParam;
-import ewm.main.event.service.PublicEventService;
-import ewm.main.stat.StatService;
+import ewm.event.server.dto.EventFullDto;
+import ewm.event.server.dto.EventShortDto;
+import ewm.event.server.dto.search.PageParam;
+import ewm.event.server.dto.search.PublicEventSearchParam;
+import ewm.event.server.service.PublicEventService;
+import ewm.event.server.stat.StatService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 

@@ -1,10 +1,10 @@
-package ewm.main.event.controller;
+package ewm.event.server.controller;
 
-import ewm.main.dto.UpdateEventAdminRequestDto;
-import ewm.main.dto.EventFullDto;
-import ewm.main.dto.search.AdminEventSearchParam;
-import ewm.main.dto.search.PageParam;
-import ewm.main.event.service.AdminEventService;
+import ewm.event.server.dto.EventFullDto;
+import ewm.event.server.dto.UpdateEventAdminRequestDto;
+import ewm.event.server.dto.search.AdminEventSearchParam;
+import ewm.event.server.dto.search.PageParam;
+import ewm.event.server.service.AdminEventService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;

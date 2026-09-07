@@ -1,9 +1,9 @@
-package ewm.main.event.repository;
+package ewm.event.server.repository;
 
-import ewm.main.event.model.Event;
-import ewm.main.event.model.EventState;
-import ewm.main.exception.ValidationException;
-import ewm.main.place.Place;
+import ewm.event.server.exception.ValidationException;
+import ewm.event.server.model.Event;
+import ewm.event.server.model.EventState;
+import ewm.place.dto.PlaceDto;
 import jakarta.persistence.criteria.Expression;
 import org.springframework.data.jpa.domain.Specification;
 
@@ -70,8 +70,7 @@ public final class EventSpecifications {
             return null;
         }
 
-        return (root, query, cb) ->
-                root.get("category").get("id").in(ids);
+        return (root, query, cb) -> root.get("categoryId").in(ids);
     }
 
     public static Specification<Event> eventDateAfter(LocalDateTime start) {
@@ -92,16 +91,19 @@ public final class EventSpecifications {
                 cb.lessThanOrEqualTo(root.get("eventDate"), end);
     }
 
-    public static Specification<Event> placeEquals(Place place) {
+    /**
+     * place теперь приходит из PlaceClient (Feign в main-service), а не из локальной
+     * JPA-связи — сравниваем по id.
+     */
+    public static Specification<Event> placeEquals(PlaceDto place) {
         if (place == null) {
             return null;
         }
 
-        return (root, query, cb) ->
-                cb.equal(root.get("place"), place);
+        return (root, query, cb) -> cb.equal(root.get("placeId"), place.getId());
     }
 
-    public static Specification<Event> inRadius(Place place, Double radius) {
+    public static Specification<Event> inRadius(PlaceDto place, Double radius) {
         if (place == null || radius == null) {
             return null;
         }
@@ -120,7 +122,7 @@ public final class EventSpecifications {
         };
     }
 
-    public static Specification<Event> placeSearch(Place place, Double radius) {
+    public static Specification<Event> placeSearch(PlaceDto place, Double radius) {
         if (radius != null && place == null) {
             throw new ValidationException("Нельзя указывать радиус без указания места");
         }

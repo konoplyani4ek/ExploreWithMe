@@ -1,9 +1,9 @@
-package ewm.main.event.controller;
+package ewm.event.server.controller;
 
 import ewm.event.dto.EventInternalDto;
-import ewm.main.event.model.Event;
-import ewm.main.event.repository.EventRepository;
-import ewm.main.exception.NotFoundException;
+import ewm.event.server.exception.NotFoundException;
+import ewm.event.server.model.Event;
+import ewm.event.server.repository.EventRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Внутренний (межсервисный) контроллер — НЕ проксируется через Gateway.
- * Сейчас единственный потребитель — request-service (валидация заявки на участие).
+ * Потребитель — request-service (EventClient), валидирует заявку на участие.
  */
 @RestController
 @RequestMapping("/internal/events")
