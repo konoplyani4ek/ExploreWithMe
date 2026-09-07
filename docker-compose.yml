@@ -22,9 +22,12 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      - discovery-server
-      - config-server
-      - ewm-service
+      discovery-server:
+        condition: service_started
+      config-server:
+        condition: service_started
+      ewm-service:
+        condition: service_healthy
     environment:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
       - SPRING_CLOUD_CONFIG_DISCOVERY_ENABLED=true
@@ -67,6 +70,12 @@ services:
   ewm-service:
     build: main-service
     image: ewm-service
+    healthcheck:
+      test: [ "CMD-SHELL", "bash -c '</dev/tcp/127.0.0.1/8080' || exit 1" ]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+      start_period: 10s
     depends_on:
       ewm-db:
         condition: service_healthy
@@ -95,3 +104,4 @@ services:
       timeout: 5s
       interval: 5s
       retries: 10
+
