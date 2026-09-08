@@ -1,6 +1,6 @@
-package ewm.additional.server.category.service;
+package ewm.additional.server.place.service;
 
-import ewm.additional.server.category.repository.PlaceRepository;
+import ewm.additional.server.place.repository.PlaceRepository;
 import ewm.additional.server.dto.search.PageParam;
 import ewm.additional.server.exception.NotFoundException;
 import ewm.additional.server.place.model.Place;

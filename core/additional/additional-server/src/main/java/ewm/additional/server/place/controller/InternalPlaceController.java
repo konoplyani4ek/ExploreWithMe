@@ -1,6 +1,6 @@
-package ewm.additional.server.category.controller;
+package ewm.additional.server.place.controller;
 
-import ewm.additional.server.category.repository.PlaceRepository;
+import ewm.additional.server.place.repository.PlaceRepository;
 import ewm.additional.server.exception.NotFoundException;
 import ewm.additional.server.place.model.Place;
 import ewm.place.dto.PlaceDto;

@@ -1,6 +1,6 @@
-package ewm.additional.server.category.controller;
+package ewm.additional.server.place.controller;
 
-import ewm.additional.server.category.service.PlaceService;
+import ewm.additional.server.place.service.PlaceService;
 import ewm.additional.server.place.model.Place;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

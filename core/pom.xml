@@ -12,15 +12,12 @@
     <artifactId>core</artifactId>
     <packaging>pom</packaging>
 
-    <!-- Сюда по мере разделения монолита будут добавляться остальные группы:
-         request, event, additional -->
     <modules>
         <module>user</module>
         <module>event</module>
         <module>request</module>
         <module>category</module>
         <module>place</module>
-        <module>additional</module>
         <module>additional</module>
     </modules>
 

@@ -1,4 +1,4 @@
-package ewm.additional.server.category.repository;
+package ewm.additional.server.place.repository;
 
 import ewm.additional.server.place.model.Place;
 import org.springframework.data.jpa.repository.JpaRepository;

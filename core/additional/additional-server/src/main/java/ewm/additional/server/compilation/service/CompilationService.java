@@ -1,6 +1,6 @@
 package ewm.additional.server.compilation.service;
 
-import ewm.additional.server.category.repository.CompilationRepository;
+import ewm.additional.server.compilation.repository.CompilationRepository;
 import ewm.additional.server.compilation.mapper.CompilationMapper;
 import ewm.additional.server.compilation.model.Compilation;
 import ewm.additional.server.dto.CompilationDto;
