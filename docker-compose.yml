@@ -26,13 +26,13 @@ services:
         condition: service_started
       config-server:
         condition: service_started
-      ewm-service:
-        condition: service_healthy
       user-service:
         condition: service_healthy
       request-service:
         condition: service_healthy
       event-service:
+        condition: service_healthy
+      additional-service:
         condition: service_healthy
     environment:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
@@ -73,38 +73,39 @@ services:
       interval: 5s
       retries: 10
 
-  ewm-service:
-    build: main-service
-    image: ewm-service
+  additional-service:
+    build: core/additional/additional-server
+    image: additional-service
     healthcheck:
-      test: [ "CMD-SHELL", "bash -c '</dev/tcp/127.0.0.1/8080' || exit 1" ]
+      test: [ "CMD-SHELL", "bash -c '</dev/tcp/127.0.0.1/8084' || exit 1" ]
       interval: 3s
       timeout: 3s
       retries: 30
       start_period: 10s
     depends_on:
-      ewm-db:
+      additional-db:
         condition: service_healthy
       discovery-server:
         condition: service_started
       config-server:
         condition: service_started
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://ewm-db:5432/ewm
-      - SPRING_DATASOURCE_USERNAME=ewm
-      - SPRING_DATASOURCE_PASSWORD=ewm
+      - SERVER_PORT=8084
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://additional-db:5432/ewm-additional
+      - SPRING_DATASOURCE_USERNAME=additional
+      - SPRING_DATASOURCE_PASSWORD=additional
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
       - SPRING_CLOUD_CONFIG_DISCOVERY_ENABLED=true
       - SPRING_CLOUD_CONFIG_DISCOVERY_SERVICE_ID=config-server
 
-  ewm-db:
+  additional-db:
     image: postgres:16.1
     ports:
-      - "6542:5432"
+      - "6546:5432"
     environment:
-      - POSTGRES_PASSWORD=ewm
-      - POSTGRES_USER=ewm
-      - POSTGRES_DB=ewm
+      - POSTGRES_PASSWORD=additional
+      - POSTGRES_USER=additional
+      - POSTGRES_DB=ewm-additional
     healthcheck:
       test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
       timeout: 5s

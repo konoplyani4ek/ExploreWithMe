@@ -20,6 +20,8 @@
         <module>request</module>
         <module>category</module>
         <module>place</module>
+        <module>additional</module>
+        <module>additional</module>
     </modules>
 
 </project>
