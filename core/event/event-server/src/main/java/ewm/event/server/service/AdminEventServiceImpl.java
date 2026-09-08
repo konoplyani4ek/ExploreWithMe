@@ -1,5 +1,6 @@
 package ewm.event.server.service;
 
+import ewm.category.client.CategoryClient;
 import ewm.event.server.dto.EventFullDto;
 import ewm.event.server.dto.UpdateEventAdminRequestDto;
 import ewm.event.server.dto.search.AdminEventSearchParam;
@@ -12,11 +13,16 @@ import ewm.event.server.model.EventState;
 import ewm.event.server.model.EventStateAction;
 import ewm.event.server.repository.EventRepository;
 import ewm.event.server.repository.EventSpecifications;
-
+import ewm.place.client.PlaceClient;
+import ewm.place.dto.PlaceDto;
+import feign.FeignException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.stereotype.Service;
 
-import java.awt.print.Pageable;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;

@@ -5,7 +5,9 @@ import ewm.event.server.dto.EventShortDto;
 import ewm.event.server.dto.NewEventDto;
 import ewm.event.server.dto.UpdateEventUserRequestDto;
 import ewm.event.server.dto.search.PageParam;
-
+import ewm.request.dto.EventRequestStatusUpdateRequestDto;
+import ewm.request.dto.EventRequestStatusUpdateResultDto;
+import ewm.request.dto.ParticipationRequestDto;
 
 import java.util.List;
 

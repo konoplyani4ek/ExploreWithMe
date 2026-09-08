@@ -1,5 +1,6 @@
 package ewm.event.server.service;
 
+import ewm.category.client.CategoryClient;
 import ewm.event.server.dto.EventFullDto;
 import ewm.event.server.dto.EventShortDto;
 import ewm.event.server.dto.NewEventDto;
@@ -11,10 +12,20 @@ import ewm.event.server.mapper.EventMapper;
 import ewm.event.server.model.Event;
 import ewm.event.server.model.EventState;
 import ewm.event.server.repository.EventRepository;
-
+import ewm.place.client.PlaceClient;
+import ewm.request.client.RequestClient;
+import ewm.request.dto.EventRequestStatusUpdateRequestDto;
+import ewm.request.dto.EventRequestStatusUpdateResultDto;
+import ewm.request.dto.InternalUpdateRequestStatusDto;
+import ewm.request.dto.ParticipationRequestDto;
+import ewm.user.client.UserClient;
+import feign.FeignException;
+import jakarta.validation.ValidationException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;

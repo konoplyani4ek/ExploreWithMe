@@ -2,10 +2,15 @@ package ewm.event.server.service;
 
 import ewm.event.server.exception.NotFoundException;
 import ewm.event.server.exception.ServiceUnavailableException;
-
-
+import ewm.user.client.UserClient;
+import ewm.user.dto.UserDto;
+import ewm.user.dto.UserShortDto;
+import feign.FeignException;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.List;
