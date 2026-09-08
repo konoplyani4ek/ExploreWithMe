@@ -9,7 +9,7 @@ import org.springframework.context.annotation.ComponentScan;
 @SpringBootApplication
 @Slf4j
 @ComponentScan(value = {"ewm.main", "ewm.stat.client"})
-@EnableFeignClients(basePackages = {"ewm.user.client", "ewm.request.client"})
+@EnableFeignClients(basePackages = {"ewm.user.client", "ewm.request.client", "ewm.event.client"})
 public class MainServiceApplication {
 
     public static void main(String[] args) {

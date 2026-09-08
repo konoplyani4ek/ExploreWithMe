@@ -1,4 +1,4 @@
-package ewm.request.server.exception;
+package ewm.request.server.mapper;
 
 import ewm.request.dto.ParticipationRequestDto;
 import ewm.request.server.model.ParticipationRequest;

@@ -1,11 +1,11 @@
 package ewm.main.category.service;
 
+import ewm.event.client.EventClient;
 import ewm.main.category.Category;
 import ewm.main.category.mapper.CategoryMapper;
 import ewm.main.category.repository.CategoryRepository;
 import ewm.main.dto.CategoryDto;
 import ewm.main.dto.NewCategoryDto;
-import ewm.main.event.repository.EventRepository;
 import ewm.main.exception.ConflictException;
 import ewm.main.exception.DataIntegrityViolationException;
 import ewm.main.exception.NotFoundException;
@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 public class CategoryService {
     private final CategoryRepository categoryRepository;
     private final EntityManager entityManager;
-    private final EventRepository eventRepository;
+    private final EventClient eventClient;
 
     @Transactional
     public CategoryDto add(NewCategoryDto dto) {
@@ -52,7 +52,7 @@ public class CategoryService {
     public void deleteOne(Long categoryId) {
         Category existingCategory = categoryRepository.findById(categoryId).orElseThrow(() -> new NotFoundException("no category found"));
 
-        if (eventRepository.existsByCategory_Id(categoryId)) {
+        if (eventClient.existsByCategory(categoryId)) {
             throw new ConflictException("Нельзя удалить категорию, к которой привязаны события");
         }
 
