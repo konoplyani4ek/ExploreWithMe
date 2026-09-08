@@ -12,14 +12,10 @@ import ewm.event.server.model.EventState;
 import ewm.event.server.model.EventStateAction;
 import ewm.event.server.repository.EventRepository;
 import ewm.event.server.repository.EventSpecifications;
-import ewm.category.client.CategoryClient;
-import ewm.place.client.PlaceClient;
-import ewm.place.dto.PlaceDto;
+
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.jpa.domain.Specification;
-import org.springframework.stereotype.Service;
+
 import java.awt.print.Pageable;
 import java.time.Duration;
 import java.time.LocalDateTime;

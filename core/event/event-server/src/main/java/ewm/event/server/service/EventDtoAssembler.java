@@ -1,21 +1,12 @@
 package ewm.event.server.service;
 
-import ewm.category.client.CategoryClient;
-import ewm.category.dto.CategoryDto;
+
 import ewm.event.server.dto.EventFullDto;
 import ewm.event.server.dto.EventShortDto;
 import ewm.event.server.mapper.EventMapper;
 import ewm.event.server.model.Event;
 import ewm.event.server.stat.StatService;
-import ewm.place.client.PlaceClient;
-import ewm.place.dto.PlaceDto;
-import ewm.request.client.RequestClient;
-import ewm.request.dto.EventConfirmedRequestsCountDto;
-import ewm.stat.client.model.GetStatsParams;
-import ewm.user.client.UserClient;
-import ewm.user.dto.UserDto;
-import ewm.user.dto.UserShortDto;
-import org.springframework.stereotype.Component;
+
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;

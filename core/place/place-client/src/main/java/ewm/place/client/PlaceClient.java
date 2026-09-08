@@ -6,9 +6,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
 /**
- * ВНИМАНИЕ: name = "ewm-main-service" — временно, места пока живут в main-service.
+ * additional-service — полноценный отдельный сервис (был временно частью main-service).
  */
-@FeignClient(name = "ewm-main-service", path = "/internal/places")
+@FeignClient(name = "additional-service", path = "/internal/places")
 public interface PlaceClient {
 
     @GetMapping("/{placeId}")
