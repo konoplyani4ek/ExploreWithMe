@@ -12,9 +12,6 @@
     <artifactId>place</artifactId>
     <packaging>pom</packaging>
 
-    <!-- place-server пока не выделен — места временно остаются в main-service.
-         place-dto/place-client уже нужны event-service (привязка события к месту,
-         поиск событий по радиусу). -->
     <modules>
         <module>place-dto</module>
         <module>place-client</module>

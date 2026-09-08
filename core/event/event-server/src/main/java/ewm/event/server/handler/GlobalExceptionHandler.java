@@ -2,6 +2,7 @@ package ewm.event.server.handler;
 
 import ewm.event.server.exception.ConflictException;
 import ewm.event.server.exception.NotFoundException;
+import ewm.event.server.exception.ServiceUnavailableException;
 import ewm.event.server.exception.ValidationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -19,6 +20,13 @@ public class GlobalExceptionHandler {
         log.warn("404: {}", e.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(new ApiError(HttpStatus.NOT_FOUND.name(), "The required object was not found.", e.getMessage()));
+    }
+
+    @ExceptionHandler(ServiceUnavailableException.class)
+    public ResponseEntity<ApiError> handleServiceUnavailable(ServiceUnavailableException e) {
+        log.warn("503: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(new ApiError(HttpStatus.SERVICE_UNAVAILABLE.name(), "A required dependency is unavailable.", e.getMessage()));
     }
 
     @ExceptionHandler(ConflictException.class)
