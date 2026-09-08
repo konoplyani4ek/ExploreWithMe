@@ -1,7 +1,6 @@
 package ewm.event.server.service;
 
-import ewm.category.client.CategoryClient;
-import ewm.event.server.dto.EventFullDto;
+import ewm.category.client.CategoryClient;import ewm.event.server.dto.EventFullDto;
 import ewm.event.server.dto.EventShortDto;
 import ewm.event.server.dto.NewEventDto;
 import ewm.event.server.dto.UpdateEventUserRequestDto;
