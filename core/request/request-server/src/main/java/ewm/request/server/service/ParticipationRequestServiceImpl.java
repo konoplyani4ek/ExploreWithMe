@@ -1,6 +1,5 @@
 package ewm.request.server.service;
 
-import ewm.event.client.EventClient;
 import ewm.event.dto.EventInternalDto;
 import ewm.request.dto.EventConfirmedRequestsCountDto;
 import ewm.request.dto.EventRequestStatusUpdateResultDto;
@@ -13,8 +12,6 @@ import ewm.request.server.model.ParticipationRequest;
 import ewm.request.server.model.RequestStatus;
 import ewm.request.server.repository.EventConfirmedRequestsCount;
 import ewm.request.server.repository.ParticipationRequestRepository;
-import ewm.user.client.UserClient;
-import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -35,13 +32,13 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
     private static final String PUBLISHED = "PUBLISHED";
 
     private final ParticipationRequestRepository requestRepository;
-    private final UserClient userClient;
-    private final EventClient eventClient;
+    private final UserGateway userGateway;
+    private final EventGateway eventGateway;
 
     @Override
     public List<ParticipationRequestDto> getRequests(long userId) {
         log.info("Getting requests for userId: {}", userId);
-        checkUserExistsOrThrow(userId);
+        userGateway.assertExists(userId);
         return requestRepository.findAllByRequesterId(userId).stream()
                 .map(ParticipationRequestMapper::toDto)
                 .toList();
@@ -52,8 +49,8 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
     public ParticipationRequestDto addRequest(long userId, long eventId) {
         log.info("Adding request from userId: {} to eventId: {}", userId, eventId);
 
-        checkUserExistsOrThrow(userId);
-        EventInternalDto event = findEventOrThrow(eventId);
+        userGateway.assertExists(userId);
+        EventInternalDto event = eventGateway.getOrThrow(eventId);
 
         if (event.getInitiatorId().equals(userId)) {
             throw new ConflictException("Нельзя подать заявку на участие в своём событии");
@@ -97,7 +94,7 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
     public ParticipationRequestDto cancelRequest(long userId, long requestId) {
         log.info("Cancelling requestId: {} by userId: {}", requestId, userId);
 
-        checkUserExistsOrThrow(userId);
+        userGateway.assertExists(userId);
 
         ParticipationRequest request = requestRepository.findById(requestId)
                 .orElseThrow(() -> new NotFoundException("Заявка с id=" + requestId + " не найдена"));
@@ -167,7 +164,7 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
     }
 
     private EventRequestStatusUpdateResultDto confirmRequests(long eventId, List<Long> requestIds,
-                                                                Integer participantLimit, Boolean requestModeration) {
+                                                              Integer participantLimit, Boolean requestModeration) {
         int limit = participantLimit == null ? 0 : participantLimit;
         if (!Boolean.TRUE.equals(requestModeration) || limit == 0) {
             throw new ConflictException("Подтверждение заявок не требуется");
@@ -232,21 +229,5 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
         result.setConfirmedRequests(Collections.emptyList());
         result.setRejectedRequests(rejected.stream().map(ParticipationRequestMapper::toDto).toList());
         return result;
-    }
-
-    private void checkUserExistsOrThrow(long userId) {
-        try {
-            userClient.getUser(userId);
-        } catch (FeignException.NotFound e) {
-            throw new NotFoundException("Пользователь с id=" + userId + " не найден");
-        }
-    }
-
-    private EventInternalDto findEventOrThrow(long eventId) {
-        try {
-            return eventClient.getEvent(eventId);
-        } catch (FeignException.NotFound e) {
-            throw new NotFoundException("Событие с id=" + eventId + " не найдено");
-        }
     }
 }

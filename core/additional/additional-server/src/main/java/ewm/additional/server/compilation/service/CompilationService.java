@@ -1,14 +1,14 @@
 package ewm.additional.server.compilation.service;
 
-import ewm.additional.server.compilation.repository.CompilationRepository;
 import ewm.additional.server.compilation.mapper.CompilationMapper;
 import ewm.additional.server.compilation.model.Compilation;
+import ewm.additional.server.compilation.repository.CompilationRepository;
 import ewm.additional.server.dto.CompilationDto;
 import ewm.additional.server.dto.NewCompilationDto;
 import ewm.additional.server.dto.UpdateCompilationRequestDto;
 import ewm.additional.server.exception.ConflictException;
 import ewm.additional.server.exception.NotFoundException;
-import ewm.event.client.EventClient;
+import ewm.additional.server.gateway.EventGateway;
 import ewm.event.dto.EventSummaryDto;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +23,7 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class CompilationService {
     private final CompilationRepository compilationRepository;
-    private final EventClient eventClient;
+    private final EventGateway eventGateway;
 
     @Transactional
     public CompilationDto add(NewCompilationDto dto) {
@@ -100,7 +100,7 @@ public class CompilationService {
         if (eventIds == null || eventIds.isEmpty()) {
             return List.of();
         }
-        return eventClient.getSummaries(List.copyOf(eventIds));
+        return eventGateway.getSummaries(List.copyOf(eventIds));
     }
 
     private Boolean isTitleTaken(String title) {

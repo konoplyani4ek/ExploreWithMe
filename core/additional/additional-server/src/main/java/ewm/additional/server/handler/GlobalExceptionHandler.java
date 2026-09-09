@@ -4,6 +4,7 @@ import ewm.additional.server.dto.ApiErrorDto;
 import ewm.additional.server.exception.ConflictException;
 import ewm.additional.server.exception.DataIntegrityViolationException;
 import ewm.additional.server.exception.NotFoundException;
+import ewm.additional.server.exception.ServiceUnavailableException;
 import ewm.additional.server.exception.ValidationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
@@ -32,6 +34,18 @@ public class GlobalExceptionHandler {
                 .build();
 
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
+
+    @ExceptionHandler(ServiceUnavailableException.class)
+    public ResponseEntity<ApiErrorDto> handleServiceUnavailable(ServiceUnavailableException e) {
+        ApiErrorDto errorResponse = ApiErrorDto.builder()
+                .status(HttpStatus.SERVICE_UNAVAILABLE.name())
+                .reason("A required dependency is unavailable.")
+                .message(e.getMessage())
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(errorResponse);
     }
 
     @ExceptionHandler
@@ -105,6 +119,18 @@ public class GlobalExceptionHandler {
                 .build();
 
         return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ApiErrorDto> handleMethodNotSupported(HttpRequestMethodNotSupportedException e) {
+        ApiErrorDto errorResponse = ApiErrorDto.builder()
+                .status(HttpStatus.METHOD_NOT_ALLOWED.name())
+                .reason("The requested HTTP method is not supported for this endpoint.")
+                .message(e.getMessage())
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(errorResponse);
     }
 
     @ExceptionHandler(Exception.class)

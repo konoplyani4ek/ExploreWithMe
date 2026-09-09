@@ -5,10 +5,7 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
-/**
- * additional-service — полноценный отдельный сервис (был временно частью main-service).
- */
-@FeignClient(name = "additional-service", path = "/internal/places")
+@FeignClient(name = "additional-service", contextId = "placeClient", path = "/internal/places")
 public interface PlaceClient {
 
     @GetMapping("/{placeId}")

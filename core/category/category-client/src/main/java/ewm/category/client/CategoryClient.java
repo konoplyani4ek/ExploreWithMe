@@ -8,10 +8,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
-/**
- * additional-service — полноценный отдельный сервис (был временно частью main-service).
- */
-@FeignClient(name = "additional-service", path = "/internal/categories")
+@FeignClient(name = "additional-service", contextId = "categoryClient", path = "/internal/categories")
 public interface CategoryClient {
 
     @GetMapping("/{categoryId}")

@@ -1,19 +1,14 @@
 package ewm.event.server.service;
 
-import ewm.category.client.CategoryClient;
 import ewm.category.dto.CategoryDto;
 import ewm.event.server.dto.EventFullDto;
 import ewm.event.server.dto.EventShortDto;
 import ewm.event.server.mapper.EventMapper;
 import ewm.event.server.model.Event;
 import ewm.event.server.stat.StatService;
-import ewm.place.client.PlaceClient;
 import ewm.place.dto.PlaceDto;
-import ewm.request.client.RequestClient;
 import ewm.request.dto.EventConfirmedRequestsCountDto;
 import ewm.stat.client.model.GetStatsParams;
-import ewm.user.client.UserClient;
-import ewm.user.dto.UserDto;
 import ewm.user.dto.UserShortDto;
 import org.springframework.stereotype.Component;
 
@@ -30,44 +25,44 @@ public class EventDtoAssembler {
     private static final boolean UNIQUE_VIEWS = true;
 
     private final StatService statService;
-    private final RequestClient requestClient;
-    private final UserClient userClient;
-    private final CategoryClient categoryClient;
-    private final PlaceClient placeClient;
+    private final RequestGateway requestGateway;
+    private final UserGateway userGateway;
+    private final CategoryGateway categoryGateway;
+    private final PlaceGateway placeGateway;
 
     public EventDtoAssembler(StatService statService,
-                             RequestClient requestClient,
-                             UserClient userClient,
-                             CategoryClient categoryClient,
-                             PlaceClient placeClient) {
+                             RequestGateway requestGateway,
+                             UserGateway userGateway,
+                             CategoryGateway categoryGateway,
+                             PlaceGateway placeGateway) {
         this.statService = statService;
-        this.requestClient = requestClient;
-        this.userClient = userClient;
-        this.categoryClient = categoryClient;
-        this.placeClient = placeClient;
+        this.requestGateway = requestGateway;
+        this.userGateway = userGateway;
+        this.categoryGateway = categoryGateway;
+        this.placeGateway = placeGateway;
     }
 
     public EventShortDto toShortDto(Event event) {
-        UserShortDto initiator = getInitiator(event.getInitiatorId());
-        CategoryDto category = categoryClient.getCategory(event.getCategoryId());
+        UserShortDto initiator = userGateway.getShort(event.getInitiatorId());
+        CategoryDto category = categoryGateway.get(event.getCategoryId());
 
         EventShortDto dto = EventMapper.toShortDto(event, category, initiator);
 
         dto.setViews(getViews(event));
-        dto.setConfirmedRequests(requestClient.getConfirmedCount(event.getId()));
+        dto.setConfirmedRequests(requestGateway.getConfirmedCount(event.getId()));
 
         return dto;
     }
 
     public EventFullDto toFullDto(Event event) {
-        UserShortDto initiator = getInitiator(event.getInitiatorId());
-        CategoryDto category = categoryClient.getCategory(event.getCategoryId());
-        PlaceDto place = event.getPlaceId() != null ? placeClient.getPlace(event.getPlaceId()) : null;
+        UserShortDto initiator = userGateway.getShort(event.getInitiatorId());
+        CategoryDto category = categoryGateway.get(event.getCategoryId());
+        PlaceDto place = event.getPlaceId() != null ? placeGateway.get(event.getPlaceId()) : null;
 
         EventFullDto dto = EventMapper.toFullDto(event, category, initiator, place);
 
         dto.setViews(getViews(event));
-        dto.setConfirmedRequests(requestClient.getConfirmedCount(event.getId()));
+        dto.setConfirmedRequests(requestGateway.getConfirmedCount(event.getId()));
 
         return dto;
     }
@@ -103,7 +98,7 @@ public class EventDtoAssembler {
         List<EventFullDto> result = new ArrayList<>();
 
         for (Event event : events) {
-            PlaceDto place = event.getPlaceId() != null ? placeClient.getPlace(event.getPlaceId()) : null;
+            PlaceDto place = event.getPlaceId() != null ? placeGateway.get(event.getPlaceId()) : null;
 
             EventFullDto dto = EventMapper.toFullDto(
                     event,
@@ -119,14 +114,6 @@ public class EventDtoAssembler {
         return result;
     }
 
-    private UserShortDto getInitiator(Long initiatorId) {
-        if (initiatorId == null) {
-            return null;
-        }
-        UserDto user = userClient.getUser(initiatorId);
-        return new UserShortDto(user.getId(), user.getName());
-    }
-
     /**
      * Один запрос к user-service на весь список событий вместо N запросов (проблема N+1).
      */
@@ -140,18 +127,11 @@ public class EventDtoAssembler {
                 .distinct()
                 .toList();
 
-        List<UserDto> users = userClient.getUsers(initiatorIds);
-
-        Map<Long, UserShortDto> result = new HashMap<>();
-        for (UserDto user : users) {
-            result.put(user.getId(), new UserShortDto(user.getId(), user.getName()));
-        }
-
-        return result;
+        return userGateway.getShortMap(initiatorIds);
     }
 
     /**
-     * Аналогично — один батч-запрос к main-service (категории) на весь список событий.
+     * Аналогично — один батч-запрос к additional-service (категории) на весь список событий.
      */
     private Map<Long, CategoryDto> getCategoriesByCategoryId(List<Event> events) {
         if (events.isEmpty()) {
@@ -163,14 +143,7 @@ public class EventDtoAssembler {
                 .distinct()
                 .toList();
 
-        List<CategoryDto> categories = categoryClient.getCategories(categoryIds);
-
-        Map<Long, CategoryDto> result = new HashMap<>();
-        for (CategoryDto category : categories) {
-            result.put(category.getId(), category);
-        }
-
-        return result;
+        return categoryGateway.getMap(categoryIds);
     }
 
     private Map<Long, Long> getConfirmedRequestsByEventId(List<Event> events) {
@@ -180,7 +153,7 @@ public class EventDtoAssembler {
 
         List<Long> eventIds = getEventIds(events);
 
-        List<EventConfirmedRequestsCountDto> counts = requestClient.getConfirmedCounts(eventIds);
+        List<EventConfirmedRequestsCountDto> counts = requestGateway.getConfirmedCounts(eventIds);
 
         Map<Long, Long> result = new HashMap<>();
         for (EventConfirmedRequestsCountDto count : counts) {

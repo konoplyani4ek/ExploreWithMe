@@ -8,7 +8,7 @@ import ewm.additional.server.dto.NewCategoryDto;
 import ewm.additional.server.exception.ConflictException;
 import ewm.additional.server.exception.DataIntegrityViolationException;
 import ewm.additional.server.exception.NotFoundException;
-import ewm.event.client.EventClient;
+import ewm.additional.server.gateway.EventGateway;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class CategoryService {
     private final CategoryRepository categoryRepository;
-    private final EventClient eventClient;
+    private final EventGateway eventGateway;
 
     @Transactional
     public CategoryDto add(NewCategoryDto dto) {
@@ -50,7 +50,7 @@ public class CategoryService {
     public void deleteOne(Long categoryId) {
         Category existingCategory = categoryRepository.findById(categoryId).orElseThrow(() -> new NotFoundException("no category found"));
 
-        if (eventClient.existsByCategory(categoryId)) {
+        if (eventGateway.existsByCategory(categoryId)) {
             throw new ConflictException("Нельзя удалить категорию, к которой привязаны события");
         }
 

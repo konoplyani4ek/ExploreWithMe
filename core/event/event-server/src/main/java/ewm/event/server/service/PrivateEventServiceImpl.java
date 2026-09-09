@@ -1,6 +1,5 @@
 package ewm.event.server.service;
 
-import ewm.category.client.CategoryClient;
 import ewm.event.server.dto.EventFullDto;
 import ewm.event.server.dto.EventShortDto;
 import ewm.event.server.dto.NewEventDto;
@@ -12,14 +11,10 @@ import ewm.event.server.mapper.EventMapper;
 import ewm.event.server.model.Event;
 import ewm.event.server.model.EventState;
 import ewm.event.server.repository.EventRepository;
-import ewm.place.client.PlaceClient;
-import ewm.request.client.RequestClient;
 import ewm.request.dto.EventRequestStatusUpdateRequestDto;
 import ewm.request.dto.EventRequestStatusUpdateResultDto;
 import ewm.request.dto.InternalUpdateRequestStatusDto;
 import ewm.request.dto.ParticipationRequestDto;
-import ewm.user.client.UserClient;
-import feign.FeignException;
 import jakarta.validation.ValidationException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,12 +29,12 @@ import java.util.List;
 @Service
 @AllArgsConstructor
 public class PrivateEventServiceImpl implements PrivateEventService {
-    private final UserClient userClient;
+    private final UserGateway userGateway;
     private final EventRepository eventRepository;
-    private final CategoryClient categoryClient;
-    private final RequestClient requestClient;
+    private final CategoryGateway categoryGateway;
+    private final RequestGateway requestGateway;
     private final EventDtoAssembler eventDtoAssembler;
-    private final PlaceClient placeClient;
+    private final PlaceGateway placeGateway;
 
     @Override
     public EventFullDto getEventOfUserById(long userId, long eventId) {
@@ -67,8 +62,8 @@ public class PrivateEventServiceImpl implements PrivateEventService {
 
         validateEventDate(dto.getEventDate());
 
-        checkUserExistsOrThrow(userId);
-        checkCategoryExistsOrThrow(dto.getCategory());
+        userGateway.assertExists(userId);
+        categoryGateway.assertExists(dto.getCategory());
 
         Event event = EventMapper.toEntity(dto, userId);
         event.setCreatedOn(LocalDateTime.now());
@@ -91,7 +86,7 @@ public class PrivateEventServiceImpl implements PrivateEventService {
 
         Long newCategoryId = dto.getCategory();
         if (newCategoryId != null) {
-            checkCategoryExistsOrThrow(newCategoryId);
+            categoryGateway.assertExists(newCategoryId);
         }
 
         EventMapper.updateEntity(event, dto, newCategoryId);
@@ -117,7 +112,7 @@ public class PrivateEventServiceImpl implements PrivateEventService {
             return List.of();
         }
 
-        return requestClient.getRequestsForEvent(eventId);
+        return requestGateway.getRequestsForEvent(eventId);
     }
 
     @Override
@@ -133,7 +128,7 @@ public class PrivateEventServiceImpl implements PrivateEventService {
                 .requestModeration(event.isRequestModeration())
                 .build();
 
-        return requestClient.updateStatus(eventId, internalDto);
+        return requestGateway.updateStatus(eventId, internalDto);
     }
 
     @Override
@@ -144,7 +139,7 @@ public class PrivateEventServiceImpl implements PrivateEventService {
 
         checkEventIsEditable(event);
 
-        findPlaceOrThrow(placeId);
+        placeGateway.assertExists(placeId);
 
         event.setPlaceId(placeId);
 
@@ -162,30 +157,6 @@ public class PrivateEventServiceImpl implements PrivateEventService {
         event.setPlaceId(null);
 
         eventRepository.save(event);
-    }
-
-    private void checkUserExistsOrThrow(long userId) {
-        try {
-            userClient.getUser(userId);
-        } catch (FeignException.NotFound e) {
-            throw new NotFoundException("Не найден пользователь с id: " + userId);
-        }
-    }
-
-    private void checkCategoryExistsOrThrow(long categoryId) {
-        try {
-            categoryClient.getCategory(categoryId);
-        } catch (FeignException.NotFound e) {
-            throw new NotFoundException("Не найдена категория с id: " + categoryId);
-        }
-    }
-
-    private void findPlaceOrThrow(long placeId) {
-        try {
-            placeClient.getPlace(placeId);
-        } catch (FeignException.NotFound e) {
-            throw new NotFoundException("Не найдено место: " + placeId);
-        }
     }
 
     private Event findEventByUserIdAndEventIdOrThrow(long userId, long eventId) {
