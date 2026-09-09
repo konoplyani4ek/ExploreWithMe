@@ -109,6 +109,14 @@
             <artifactId>spring-cloud-starter-openfeign</artifactId>
         </dependency>
 
+        <!-- Стандартный HTTP-клиент Feign (java.net.HttpURLConnection) не поддерживает
+     метод PATCH — это ограничение JDK, а не Spring. RequestClient.updateStatus
+     использует @PatchMapping, поэтому нужен полноценный HTTP-клиент. -->
+        <dependency>
+            <groupId>io.github.openfeign</groupId>
+            <artifactId>feign-hc5</artifactId>
+        </dependency>
+
         <!-- Надёжность: быстрый отказ вместо зависания на таймауте (CircuitBreaker/TimeLimiter),
              короткие повторные попытки на сетевые сбои (Retry). -->
         <dependency>
